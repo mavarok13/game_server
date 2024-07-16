@@ -21,7 +21,7 @@
 #include "game_office_player_provider.h"
 #include "json_loader.h"
 #include "request_handler.h"
-#include "logger.hpp"
+#include "logger.h"
 #include "ticker.h"
 #include "command_line_args.h"
 #include "extra_data.h"
