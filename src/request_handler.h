@@ -41,6 +41,7 @@ namespace fs = std::filesystem;
 
 HttpResponse ConstructJsonResponse (http::status status, unsigned version, bool keep_alive = false);
 HttpFileResponse ConstructFileResponse (HttpRequest req, const fs::path & root, sys::error_code & ec);
+HttpResponse ConstructMethodNotAllowedResponse (HttpRequest request, std::string_view methods);
 
 class RequestHandler {
 public:
@@ -142,62 +143,27 @@ public:
 // *    /api/v1/maps/{map_id}
 // *    Methods: POST, PUT, DELETE, OPTIONS
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/maps"}, http::verb::post, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }, 1));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/maps"}, http::verb::delete_, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }, 1));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/maps"}, http::verb::options, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }, 1));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/maps"}, http::verb::put, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }, 1));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/maps"}, http::verb::patch, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }, 1));
 
@@ -307,80 +273,32 @@ public:
 // *    Join, METHOD: GET, PUT, DELETE, HEAD
 // *    /api/v1/game/join
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/join"}, http::verb::get, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            // res.set(http::field::allow, http::verb::post);
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/join"}, http::verb::put, [self = this, start_response_time, &send] (const HttpRequest & req) {
-            
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            // res.set(http::field::allow, http::verb::post);
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/join"}, http::verb::delete_, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            // res.set(http::field::allow, http::verb::post);
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/join"}, http::verb::head, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            // res.set(http::field::allow, http::verb::post);
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/join"}, http::verb::options, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            // res.set(http::field::allow, http::verb::post);
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/join"}, http::verb::patch, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            // res.set(http::field::allow, http::verb::post);
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
@@ -471,62 +389,27 @@ public:
 
 // *    POST, PUT, OPTIONS, DELETE, PATCH
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::post, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::put, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::delete_, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::options, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::patch, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
@@ -617,62 +500,27 @@ public:
 
 // *    OPTIONS, POST, PUT, PATCH, DELETE
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::post, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::put, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::delete_, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::options, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::patch, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "GET, HEAD");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "GET, HEAD")};
             send(std::move(res), start_response_time);
         }));
 
@@ -800,74 +648,32 @@ public:
 
 // *    GET, HEAD, PUT, DELETE, OPTIONS, PATCH
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/player/action"}, http::verb::get, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/player/action"}, http::verb::head, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/player/action"}, http::verb::put, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/player/action"}, http::verb::options, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/player/action"}, http::verb::patch, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/player/action"}, http::verb::delete_, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
@@ -957,74 +763,32 @@ public:
 
 // *    GET, HEAD, PUT, DELETE, OPTIONS, PATCH
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/tick"}, http::verb::get, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/tick"}, http::verb::head, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/tick"}, http::verb::put, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/tick"}, http::verb::delete_, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/tick"}, http::verb::options, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/tick"}, http::verb::patch, [self = this, start_response_time, &send] (const HttpRequest & req) {
-
-            HttpResponse res{ConstructJsonResponse(http::status::method_not_allowed, req.version())};
-            
-            res.set(http::field::allow, "POST");
-            res.set(http::field::cache_control, "no-cache");
-            res.body() = json_builder::GetMethodNotAllowed_s("POST");
-            res.prepare_payload();
-
+            HttpResponse res{ConstructMethodNotAllowedResponse(req, "POST")};
             send(std::move(res), start_response_time);
         }));
 

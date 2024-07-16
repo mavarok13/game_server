@@ -40,7 +40,7 @@ add_executable(game_server
 	src/json_loader.cpp
 	src/json_builder.h
 	src/json_builder.cpp
-	src/logger.hpp
+	src/logger.h
 	src/logger.cpp
 	src/loot_generator.h
 	src/loot_generator.cpp

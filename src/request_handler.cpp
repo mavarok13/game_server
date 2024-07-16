@@ -42,4 +42,13 @@ HttpFileResponse ConstructFileResponse (HttpRequest req, const fs::path & root, 
 
     return response;
 }
+
+HttpResponse ConstructMethodNotAllowedResponse (HttpRequest request, std::string_view methods) {
+    HttpResponse response{ConstructJsonResponse(http::status::method_not_allowed, request.version())};
+            
+    response.set(http::field::allow, "GET, HEAD");
+    response.set(http::field::cache_control, "no-cache");
+    response.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
+    response.prepare_payload();
+}
 }  // namespace http_handler
