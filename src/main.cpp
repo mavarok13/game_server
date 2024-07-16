@@ -69,7 +69,6 @@ void RunWorkers(unsigned n, const Fn& fn) {
     po::notify(vm);
 
     if (vm.contains("help"s)) {
-        // Если был указан параметр --help, то выводим справку и возвращаем nullopt
         std::cout << desc;
         return std::nullopt;
     }
@@ -86,15 +85,17 @@ void RunWorkers(unsigned n, const Fn& fn) {
 
 int main(int argc, const char* argv[]) {
     try {
+//  *   PARSE COMMAND LINE
         auto args = ParseCommandLine(argc, argv);
-
         if (!args) { throw std::runtime_error("Start application trouble"); }
-
-        SetupConsoleLogging();
 
         std::string root = args->wwwroot_dir;
 
-        // 1. Загружаем карту из файла и построить модель игры
+//  *   LOGGING SETUP
+        SetupConsoleLogging();
+
+
+//  *   LOAD GAME CONFIG
         model::Game game = json_loader::LoadGame(args->config_file);
         std::vector<extra_data::MapExtraData> maps_extra_data = json_loader::GetMapsExtraData(args->config_file);
 
@@ -102,17 +103,11 @@ int main(int argc, const char* argv[]) {
         game.SetTimerStopped(args->no_tick_period);
 
 // *    LOOT_GENERATOR
-        /* loot_gen::LootGenerator lg(std::chrono::milliseconds{(int)game.GetLootSpawnPeriod()}, game.GetLootSpawnProbability(), [] {
-            return (double)std::rand()/RAND_MAX;
-        }); */
-
         loot_gen::LootGenerator lg(std::chrono::milliseconds{(int)game.GetLootSpawnPeriod()*1000}, game.GetLootSpawnProbability());
 
-        // 2. Инициализируем io_context
         const unsigned num_threads = std::thread::hardware_concurrency();
         net::io_context ioc(num_threads);
 
-        // 3. Добавляем асинхронный обработчик сигналов SIGINT и SIGTERM
         net::signal_set signal_set(ioc, SIGINT, SIGTERM);
 
         signal_set.async_wait([&ioc] (const sys::error_code & ec, int signal_number) {
@@ -127,15 +122,12 @@ int main(int argc, const char* argv[]) {
         });
 
 
-        // 4. Создаём обработчик HTTP-запросов и связываем его с моделью игры
         auto strand = net::make_strand(ioc);
 
         http_handler::RequestHandler handler{game, lg, maps_extra_data, strand, root};
 
         const auto address = net::ip::make_address("0.0.0.0");
         constexpr net::ip::port_type port = 8080;
-
-        // 5. Запустить обработчик HTTP-запросов, делегируя их обработчику запросов
 
         http_server::ServeHttp(ioc, {address, port}, [&handler, &ioc](auto&& req, auto&& send) {
             handler(std::move(req), send);
@@ -228,7 +220,6 @@ int main(int argc, const char* argv[]) {
         
         BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{"address", address.to_string() }, { "port", port }}) << logging::add_value(message_, "server started");
 
-        // 6. Запускаем обработку асинхронных операций
         RunWorkers(std::max(1u, num_threads), [&ioc] {
             ioc.run();
         });

@@ -15,8 +15,11 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 add_library(GameLib STATIC
+	src/model.h
 	src/model.cpp
+	src/model_properties.h
 	src/sdk.h
+	src/random_generator.h
 	src/tagged.h
 )
 
