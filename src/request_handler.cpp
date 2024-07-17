@@ -59,9 +59,9 @@ HttpResponse ConstructOkResponse(HttpRequest request, std::string_view body) {
 // RESPONSE: METHOD NOT ALLOWED
 HttpResponse ConstructMethodNotAllowedResponse (HttpRequest request, std::string_view methods) {
     HttpResponse response = ConstructJsonResponse(http::status::method_not_allowed, request.version());
-    response.set(http::field::allow, "GET, HEAD");
+    response.set(http::field::allow, methods);
     response.set(http::field::cache_control, "no-cache");
-    response.body() = json_builder::GetMethodNotAllowed_s("GET, HEAD");
+    response.body() = json_builder::GetMethodNotAllowed_s(methods);
     response.prepare_payload();
 
     return response;

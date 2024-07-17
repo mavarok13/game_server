@@ -23,8 +23,6 @@ add_library(GameLib STATIC
 	src/tagged.h
 )
 
-#target_link_libraries(GameLib PUBLIC CONAN_PKG::boost)
-
 add_executable(game_server
 	src/main.cpp
 	src/command_line_args.h
@@ -70,6 +68,13 @@ add_executable(collision_detector_test
 	src/collision_detector.cpp
 )
 
+add_executable(url_decode_tests
+	tests/url_decode_tests.cpp
+	src/http_path_utils.h
+	src/http_path_utils.cpp
+)
+
 target_link_libraries(game_server PUBLIC GameLib PRIVATE Threads::Threads PUBLIC CONAN_PKG::boost)
 target_link_libraries(loot_generator_test PRIVATE CONAN_PKG::catch2)
 target_link_libraries(collision_detector_test PRIVATE CONAN_PKG::catch2)
+target_link_libraries(url_decode_tests PRIVATE CONAN_PKG::catch2)

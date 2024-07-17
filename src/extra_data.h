@@ -11,11 +11,11 @@ class MapExtraData {
 public:
     MapExtraData(std::string map_id, json::value map_loot_types) : map_id_(map_id), map_loot_types_(map_loot_types) {}
 
-    std::string GetMapId() {
+    std::string GetMapId() noexcept {
         return map_id_;
     }
 
-    std::string GetMapId() const {
+    std::string GetMapId() noexcept const {
         return map_id_;
     }
 

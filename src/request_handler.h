@@ -68,7 +68,7 @@ public:
         std::chrono::time_point<std::chrono::system_clock> start_response_time = std::chrono::system_clock::now();
 
         std::string_view target_str_encoded{req.target()};
-        req.target(http_path_utils::UrlUncode(target_str_encoded).c_str());
+        req.target(http_path_utils::UrlDecode(target_str_encoded));
 
         HttpResponse response = ConstructJsonResponse(http::status::not_found, req.version());
         response.body() = json_builder::GetPageNotFound_s();

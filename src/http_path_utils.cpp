@@ -3,7 +3,6 @@
 namespace http_path_utils {
 
 int PathBased(fs::path target_path, fs::path base) {
-
     target_path = fs::weakly_canonical(target_path);
     base = fs::weakly_canonical(base);
 
@@ -32,7 +31,6 @@ int PathBased(fs::path target_path, fs::path base) {
 }
 
 bool MatchPaths(fs::path target_path, fs::path path) {
-
     target_path = fs::weakly_canonical(target_path);
     path = fs::weakly_canonical(path);
 
@@ -52,44 +50,57 @@ bool MatchPaths(fs::path target_path, fs::path path) {
     return true;
 }
 
-std::string UrlUncode(std::string_view encoded_target) {
-
-    std::string encoded_target_s{encoded_target.data(), encoded_target.size()};
+std::string UrlDecode(std::string_view encoded_str) {
+    std::string decoded_str{encoded_str.begin(), encoded_str.end()};
 
     size_t pos = std::string::npos;
 
     char symbol = '\0';
 
-    while ((pos = encoded_target_s.find('%')) != std::string::npos /* && pos < encoded_target_s.size()-2 */) {
+    while ((pos = decoded_str.find('%')) != std::string::npos) {
+        if (pos >= decoded_str.size()-2) {
+            throw std::invalid_argument("Parse trouble: code is not full");
+        }
 
-        std::string code{encoded_target_s.substr(pos+1, 2).c_str()};
+        std::string code{decoded_str.substr(pos+1, 2).c_str()};
 
         if (code[0] >= 'A' && code[0] <= 'F') {
 
             symbol = (code[0]-'A'+10) * 16;
+        } else if (code[0] >= 'a' && code[0] <= 'f') {
+
+            symbol = (code[0]-'a'+10) * 16;
         } else if (code[0] >= '0' && code[0] <= '9') {
 
             symbol = (code[0]-'0') * 16;
+        } else {
+
+            throw std::invalid_argument("Parse trouble: invalid symbols");
         }
 
         if (code[1] >= 'A' && code[1] <= 'F') {
 
             symbol += code[1]-'A'+10;
+        } else if (code[1] >= 'a' && code[1] <= 'f') {
+
+            symbol += (code[1]-'a'+10);
         } else if (code[1] >= '0' && code[1] <= '9') {
 
             symbol += code[1]-'0';
+        } else {
+
+            throw std::invalid_argument("Parse trouble: invalid symbols");
         }
 
-        encoded_target_s.replace(pos, 3, 1, symbol);
+        decoded_str.replace(pos, 3, 1, symbol);
 
         symbol = '\0';
     }
 
-    while ((pos = encoded_target_s.find('+')) != std::string::npos) {
-
-        encoded_target_s.replace(pos, 1, 1, ' ');
+    while ((pos = decoded_str.find('+')) != std::string::npos) {
+        decoded_str.replace(pos, 1, 1, ' ');
     }
 
-    return encoded_target_s;
+    return decoded_str;
 }
 } // namespace http_path_utils
