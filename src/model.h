@@ -380,7 +380,6 @@ public:
     }
 
     void NewPlayer(unsigned int id) {
-
         Vector2 position{0, 0};
 
         position.x = map_->GetRoads().front().GetStart().x;

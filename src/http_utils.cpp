@@ -1,6 +1,8 @@
-#include "http_path_utils.h"
+#include <string>
 
-namespace http_path_utils {
+#include "http_utils.h"
+
+namespace http_utils {
 
 int PathBased(fs::path target_path, fs::path base) {
     target_path = fs::weakly_canonical(target_path);
@@ -103,4 +105,18 @@ std::string UrlDecode(std::string_view encoded_str) {
 
     return decoded_str;
 }
-} // namespace http_path_utils
+
+std::string FormatToken(std::string_view token) {
+    std::string::size_type pos = token.find(' ');
+
+    auto begin = token.begin()+pos+1;
+    auto end = token.begin()+pos+33;
+
+    if (token.end() - end < 0) {
+        throw std::invalid_argument("Parse error: invalid size");
+    }
+
+    return std::string{begin, end};
+}
+
+} // namespace http_utils

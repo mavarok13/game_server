@@ -134,7 +134,6 @@ int main(int argc, const char* argv[]) {
         });
 
         if (!args->no_tick_period) {
-
             std::make_shared<ticker::Ticker>(ticker::Ticker{strand, std::chrono::milliseconds(args->tick_period), [&game, &lg] (int interval) {
                 game.Tick(interval, [&game, &lg, &interval] {
                     for (model::GameSession & session : game.GetSessions()) {

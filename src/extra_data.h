@@ -15,7 +15,7 @@ public:
         return map_id_;
     }
 
-    std::string GetMapId() noexcept const {
+    std::string GetMapId() const noexcept {
         return map_id_;
     }
 

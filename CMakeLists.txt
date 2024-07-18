@@ -30,8 +30,8 @@ add_executable(game_server
 	src/http_server.cpp
 	src/request_handler.h
 	src/request_handler.cpp
-	src/http_path_utils.h
-	src/http_path_utils.cpp
+	src/http_utils.h
+	src/http_utils.cpp
 	src/http_content_type.h
 	src/http_content_type.cpp
 	src/app.h
@@ -68,13 +68,13 @@ add_executable(collision_detector_test
 	src/collision_detector.cpp
 )
 
-add_executable(url_decode_tests
-	tests/url_decode_tests.cpp
-	src/http_path_utils.h
-	src/http_path_utils.cpp
+add_executable(http_utils_tests
+	tests/http_utils_tests.cpp
+	src/http_utils.h
+	src/http_utils.cpp
 )
 
 target_link_libraries(game_server PUBLIC GameLib PRIVATE Threads::Threads PUBLIC CONAN_PKG::boost)
 target_link_libraries(loot_generator_test PRIVATE CONAN_PKG::catch2)
 target_link_libraries(collision_detector_test PRIVATE CONAN_PKG::catch2)
-target_link_libraries(url_decode_tests PRIVATE CONAN_PKG::catch2)
+target_link_libraries(http_utils_tests PRIVATE CONAN_PKG::catch2)

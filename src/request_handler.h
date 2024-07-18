@@ -17,7 +17,7 @@
 #include "http_server.h"
 #include "json_builder.h"
 #include "endpoint.h"
-#include "http_path_utils.h"
+#include "http_utils.h"
 #include "http_content_type.h"
 #include "extra_data.h"
 #include "loot_generator.h"
@@ -68,7 +68,7 @@ public:
         std::chrono::time_point<std::chrono::system_clock> start_response_time = std::chrono::system_clock::now();
 
         std::string_view target_str_encoded{req.target()};
-        req.target(http_path_utils::UrlDecode(target_str_encoded));
+        req.target(http_utils::UrlDecode(target_str_encoded));
 
         HttpResponse response = ConstructJsonResponse(http::status::not_found, req.version());
         response.body() = json_builder::GetPageNotFound_s();
@@ -285,11 +285,7 @@ public:
 // *    /api/v1/game/players
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::get, [self = this, start_response_time, &send] (const HttpRequest & req) {
             try {
-                std::string token{req.at(http::field::authorization).data(), req.at(http::field::authorization).size()};
-                token.erase(0, 7);
-                token.erase(32, 3);
-
-                if (token.size() != 32) throw "Invalid token";
+                std::string token{http_utils::FormatToken(req.at(http::field::authorization))};
 
                 app::Player * player = app::PlayersManager::Instance().GetPlayerByToken(token);
 
@@ -308,11 +304,7 @@ public:
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/players"}, http::verb::head, [self = this, start_response_time, &send] (const HttpRequest & req) {
             try {
-                std::string token{req.at(http::field::authorization).data(), req.at(http::field::authorization).size()};
-                token.erase(0, 7);
-                token.erase(32, 3);
-
-                if (token.size() != 32) throw "Invalid token";
+                std::string token{http_utils::FormatToken(req.at(http::field::authorization))};
 
                 app::Player * player = app::PlayersManager::Instance().GetPlayerByToken(token);
 
@@ -360,12 +352,7 @@ public:
 // *    Methods: GET, HEAD
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::get, [self = this, start_response_time, &send] (const HttpRequest & req) {
             try {
-                std::string token{req.at(http::field::authorization).data(), req.at(http::field::authorization).size()};
-
-                token.erase(0, 7);
-                token.erase(32, 3);
-
-                if (token.size() != 32) throw "Invalid token";
+                std::string token{http_utils::FormatToken(req.at(http::field::authorization))};
 
                 app::Player * player = app::PlayersManager::Instance().GetPlayerByToken(token);
 
@@ -384,12 +371,7 @@ public:
 
         endpoints.emplace_back(endpoint::Endpoint({"/api/v1/game/state"}, http::verb::head, [self = this, start_response_time, &send] (const HttpRequest & req) {
             try {
-                std::string token{req.at(http::field::authorization).data(), req.at(http::field::authorization).size()};
-
-                token.erase(0, 7);
-                token.erase(32, 3);
-
-                if (token.size() != 32) throw "Invalid token";
+                std::string token{http_utils::FormatToken(req.at(http::field::authorization))};
 
                 app::Player * player = app::PlayersManager::Instance().GetPlayerByToken(token);
 
@@ -446,12 +428,7 @@ public:
                 }
                 
                 try {
-                    std::string token{req.at(http::field::authorization).data(), req.at(http::field::authorization).size()};
-
-                    token.erase(0, 7);
-                    token.erase(32, 3);
-
-                    if (token.size() != 32) throw "Invalid token";
+                    std::string token{http_utils::FormatToken(req.at(http::field::authorization))};
 
                     app::Player * player = app::PlayersManager::Instance().GetPlayerByToken(token);
 
