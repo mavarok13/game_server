@@ -49,6 +49,8 @@ add_executable(game_server
 	src/collision_detector.cpp
 	src/game_item_player_provider.h
 	src/game_office_player_provider.h
+	src/update_items.h
+	src/update_items.cpp
 	src/extra_data.h
 	src/extra_data.cpp
 	src/endpoint.h

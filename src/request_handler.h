@@ -14,13 +14,14 @@
 
 #include "model.h"
 #include "app.h"
+#include "update_items.h"
+#include "loot_generator.h"
 #include "http_server.h"
 #include "json_builder.h"
 #include "endpoint.h"
 #include "http_utils.h"
 #include "http_content_type.h"
 #include "extra_data.h"
-#include "loot_generator.h"
 
 namespace http_handler {
 
@@ -535,7 +536,6 @@ public:
             if (!self->game_.IsTimerStopped()) {
                 HttpResponse response = ConstructBadRequestResponse(req, json_builder::GetBadRequest_s());
                 return send(std::move(response), start_response_time);
-
             }
 
             net::dispatch(self->strand_, [self, start_response_time, &send, &req] {
@@ -570,6 +570,7 @@ public:
                     self->game_.Tick(time_delta, [&self, &time_delta] {
                         for (model::GameSession & session : self->game_.GetSessions()) {
                             session.AddItems(self->generator_.Generate(std::chrono::milliseconds(time_delta), session.GetItems().size(), session.GetDogs().size()));
+                            collision_detector::UpdateSessionItems(session, time_delta);
                         }
                     });
 
