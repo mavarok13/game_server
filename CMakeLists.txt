@@ -15,12 +15,13 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 add_library(GameLib STATIC
+	src/model.h
 	src/model.cpp
+	src/model_properties.h
 	src/sdk.h
+	src/random_generator.h
 	src/tagged.h
 )
-
-#target_link_libraries(GameLib PUBLIC CONAN_PKG::boost)
 
 add_executable(game_server
 	src/main.cpp
@@ -29,8 +30,8 @@ add_executable(game_server
 	src/http_server.cpp
 	src/request_handler.h
 	src/request_handler.cpp
-	src/http_path_utils.h
-	src/http_path_utils.cpp
+	src/http_utils.h
+	src/http_utils.cpp
 	src/http_content_type.h
 	src/http_content_type.cpp
 	src/app.h
@@ -40,7 +41,7 @@ add_executable(game_server
 	src/json_loader.cpp
 	src/json_builder.h
 	src/json_builder.cpp
-	src/logger.hpp
+	src/logger.h
 	src/logger.cpp
 	src/loot_generator.h
 	src/loot_generator.cpp
@@ -48,6 +49,8 @@ add_executable(game_server
 	src/collision_detector.cpp
 	src/game_item_player_provider.h
 	src/game_office_player_provider.h
+	src/update_items.h
+	src/update_items.cpp
 	src/extra_data.h
 	src/extra_data.cpp
 	src/endpoint.h
@@ -67,6 +70,13 @@ add_executable(collision_detector_test
 	src/collision_detector.cpp
 )
 
+add_executable(http_utils_tests
+	tests/http_utils_tests.cpp
+	src/http_utils.h
+	src/http_utils.cpp
+)
+
 target_link_libraries(game_server PUBLIC GameLib PRIVATE Threads::Threads PUBLIC CONAN_PKG::boost)
 target_link_libraries(loot_generator_test PRIVATE CONAN_PKG::catch2)
 target_link_libraries(collision_detector_test PRIVATE CONAN_PKG::catch2)
+target_link_libraries(http_utils_tests PRIVATE CONAN_PKG::catch2)

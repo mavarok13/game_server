@@ -11,16 +11,13 @@ namespace app {
 
 class Player {
 public:
-    // Player (std::string_view token, int player_id, std::string_view player_name) : token_(token), player_id_(player_id), player_name_(player_name) {}
     Player (std::string token, int player_id, std::string player_name, model::GameSession * session) : token_(token), player_id_(player_id), player_name_(player_name), session_(session) {}
 
-    // std::string_view GetToken() {
     std::string GetToken() {
 
         return token_;
     }
 
-    // std::string_view GetToken() const {
     std::string GetToken() const {
 
         return token_;
@@ -87,10 +84,8 @@ public:
     }
 
     std::string GetToken() {
-
         std::stringstream ss;
         std::stringstream half_hex_string;
-        // std::cout << std::hex << generator1_() << generator2_() << std::endl;
 
         auto gen1 = generator1_();
         auto gen2 = generator2_();
@@ -118,14 +113,6 @@ public:
 
         ss << half_hex_string.str();
 
-        /* ss << std::hex << gen1 << gen2;
-        std::cout << (long)gen1 << std::endl;
-        std::cout << (long)gen2 << std::endl;
-        std::cout << std::hex << gen1 << gen2 << std::dec << std::endl; */
-        // ss << std::hex << generator1_();
-
-        // std::cout << ss.str() << std::endl;
-
         return ss.str();
     }
 private:
@@ -140,10 +127,6 @@ private:
         std::uniform_int_distribution<std::mt19937_64::result_type> dist;
         return dist(random_device_);
     }()};
-    // Чтобы сгенерировать токен, получите из generator1_ и generator2_
-    // два 64-разрядных числа и, переведя их в hex-строки, склейте в одну.
-    // Вы можете поэкспериментировать с алгоритмом генерирования токенов,
-    // чтобы сделать их подбор ещё более затруднительным
 }; 
 
 class PlayersManager {
@@ -155,9 +138,7 @@ public:
     }
 
     Player AddNewPlayer(std::string player_name, model::GameSession * session) {
-
         std::string token{PlayerTokens::Instance().GetToken()};
-
         Player player{token, player_id_++, player_name, session};
 
         players_.emplace_back(player);
@@ -168,16 +149,10 @@ public:
     }
 
     Player * GetPlayerByToken(std::string token) {
-
         Player * player = 0;
 
         for (Player & p : players_) {
-
-
-            // if (token == p.GetToken().c_str()) {
             if (std::strcmp(p.GetToken().c_str(), token.c_str()) == 0) {
-
-                // std::cout << token << " - " << p.GetToken() << std::endl;
                 player = &p;
                 break;
             }
@@ -187,7 +162,6 @@ public:
     }
 
     std::vector<Player> & GetPlayers() {
-
         return players_;
     }
 private:

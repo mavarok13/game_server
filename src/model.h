@@ -7,6 +7,8 @@
 #include <cstdlib>
 
 #include "tagged.h"
+#include "model_properties.h"
+#include "random_generator.h"
 
 namespace model {
 
@@ -378,25 +380,20 @@ public:
     }
 
     void NewPlayer(unsigned int id) {
-
         Vector2 position{0, 0};
 
         position.x = map_->GetRoads().front().GetStart().x;
         position.y = map_->GetRoads().front().GetStart().y;
         
         if (random_position_) {
-            Road pickedRoad = map_->GetRoads()[std::rand()%map_->GetRoads().size()];
+            Road picked_road = map_->GetRoads()[std::rand()%map_->GetRoads().size()];
 
-            if (pickedRoad.IsHorizontal()) {
-
-                double x = pickedRoad.GetStart().x+(pickedRoad.GetEnd().x-pickedRoad.GetStart().x)*(std::rand()%101)/100;
-
-                position = Vector2{x, pickedRoad.GetStart().y};
+            if (picked_road.IsHorizontal()) {
+                double x = picked_road.GetStart().x+(picked_road.GetEnd().x-picked_road.GetStart().x)*RandomGenerator::GenerateUpTo(100)/100;
+                position = Vector2{x, picked_road.GetStart().y};
             } else {
-
-                double y = pickedRoad.GetStart().y+(pickedRoad.GetEnd().y-pickedRoad.GetStart().y)*(std::rand()%101)/100;
-
-                position = Vector2{pickedRoad.GetStart().x, y};
+                double y = picked_road.GetStart().y+(picked_road.GetEnd().y-picked_road.GetStart().y)*RandomGenerator::GenerateUpTo(100)/100;
+                position = Vector2{picked_road.GetStart().x, y};
             }
         }
 
@@ -404,11 +401,8 @@ public:
     }
 
     Dog * GetDogById(unsigned int id) {
-
         for (Dog & dog : dogs_) {
-
             if (dog.GetId() == id) {
-
                 return &dog;
             }
         }
@@ -417,7 +411,6 @@ public:
     }
 
     Dogs & GetDogs() {
-
         return dogs_;
     }
 
@@ -433,11 +426,11 @@ public:
             Point position{0, 0};
 
             if(picked_road.IsHorizontal()) {
-                position.x = picked_road.GetStart().x+(picked_road.GetEnd().x-picked_road.GetStart().x)*(std::rand()%101)/100;
+                position.x = picked_road.GetStart().x+(picked_road.GetEnd().x-picked_road.GetStart().x)*RandomGenerator::GenerateUpTo(100)/100;
                 position.y = picked_road.GetStart().y;
             } else {
                 position.x = picked_road.GetStart().x;
-                position.y = picked_road.GetStart().y+(picked_road.GetEnd().y-picked_road.GetStart().y)*(std::rand()%101)/100;
+                position.y = picked_road.GetStart().y+(picked_road.GetEnd().y-picked_road.GetStart().y)*RandomGenerator::GenerateUpTo(100)/100;
             }
 
             items_.emplace_back(++item_last_id_, map_->GetItemsTypes()[picked_item_type], position);
@@ -453,111 +446,7 @@ public:
         }
     }
 
-    void Update(int delta_time) {
-
-        for (Dog & dog : dogs_) {
-
-            Vector2 position = dog.GetPosition();
-            Vector2 speed = dog.GetSpeed();
-            Direction dir = dog.GetDirection();
-
-            std::vector <Road const *> pickedRoads;
-            for (const Road & road : map_->GetRoads()) {
-                
-                Point start{0, 0};
-                Point end{0, 0};
-
-                if (road.IsHorizontal() && road.GetStart().x <= road.GetEnd().x) {
-                    start = road.GetStart();
-                    end = road.GetEnd();
-                } else if (road.IsHorizontal() && road.GetStart().x > road.GetEnd().x) {
-                    start = road.GetEnd();
-                    end = road.GetStart();
-                }
-
-                if (road.IsVertical() && road.GetStart().y <= road.GetEnd().y) {
-                    start = road.GetStart();
-                    end = road.GetEnd();
-                } else if (road.IsVertical() && road.GetStart().y > road.GetEnd().y) {
-                    start = road.GetEnd();
-                    end = road.GetStart();
-                }
-
-                if (position.x >= start.x - 0.4 && position.x <= end.x + 0.4 && position.y >= start.y - 0.4 && position.y <= end.y + 0.4) {
-
-                    pickedRoads.emplace_back(&road);
-                }
-            }
-
-            if (pickedRoads.size() != 0) {
-                position.x += speed.x * (delta_time/1000.0);
-                position.y += speed.y * (delta_time/1000.0);
-            }
-
-            for (const Road * road : pickedRoads) {
-
-                Point start{0, 0};
-                Point end{0, 0};
-
-                if (road->IsHorizontal() && road->GetStart().x <= road->GetEnd().x) {
-                    start = road->GetStart();
-                    end = road->GetEnd();
-                } else if (road->IsHorizontal() && road->GetStart().x > road->GetEnd().x) {
-                    start = road->GetEnd();
-                    end = road->GetStart();
-                }
-
-                if (road->IsVertical() && road->GetStart().y <= road->GetEnd().y) {
-                    start = road->GetStart();
-                    end = road->GetEnd();
-                } else if (road->IsVertical() && road->GetStart().y > road->GetEnd().y) {
-                    start = road->GetEnd();
-                    end = road->GetStart();
-                }
-
-                if (pickedRoads.size() != 2) {
-
-                    if (position.x < start.x - 0.4) {
-                        position.x = start.x - 0.4;
-                        dog.SetSpeed(Vector2{0, 0});
-                    } else if (position.x > end.x + 0.4) {
-                        position.x = end.x + 0.4; 
-                        dog.SetSpeed(Vector2{0, 0});
-                    } else if (position.y < start.y - 0.4) {
-                        position.y = start.y - 0.4;
-                        dog.SetSpeed(Vector2{0, 0});
-                    } else if (position.y > end.y + 0.4) {
-                        position.y = end.y + 0.4;
-                        dog.SetSpeed(Vector2{0, 0});
-                    }
-                } else {
-
-                    if (road->IsHorizontal() && (dog.GetDirection() == Direction::WEST || dog.GetDirection() == Direction::EAST)) {
-
-                        if (position.x < start.x - 0.4) {
-                            position.x = start.x - 0.4;
-                            dog.SetSpeed(Vector2{0, 0});
-                        } else if (position.x > end.x + 0.4) {
-                            position.x = end.x + 0.4;
-                            dog.SetSpeed(Vector2{0, 0});
-                        }
-                    } else if (road->IsVertical() && (dog.GetDirection() == Direction::SOUTH || dog.GetDirection() == Direction::NORTH)) {
-
-                        if (position.y < start.y - 0.4) {
-                            position.y = start.y - 0.4;
-                            dog.SetSpeed(Vector2{0, 0});
-                        } else if (position.y > end.y + 0.4) {
-                            position.y = end.y + 0.4;
-                            dog.SetSpeed(Vector2{0, 0});
-                        }
-                    }
-                }
-            }
-
-            dog.SetPosition(position);
-            
-        }
-    }
+    void Update(unsigned int delta_time);
 
 private:
     Dogs dogs_;
@@ -675,5 +564,7 @@ private:
     bool timer_stopped_ = false;
     bool random_position_ = false;
 };
+
+std::vector<Road> GetDogStandRoads(const Dog & dog, const Map & map);
 
 }  // namespace model

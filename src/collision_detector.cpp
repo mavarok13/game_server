@@ -9,7 +9,7 @@ CollectionResult TryCollectPoint(geom::Point2D a, geom::Point2D b, geom::Point2D
     // Тут приходится использовать строгое равенство, а не приближённое,
     // пскольку при сборе заказов придётся учитывать перемещение даже на небольшое
     // расстояние.
-    assert(b.x != a.x || b.y != a.y);
+    // assert(b.x != a.x || b.y != a.y);
     const double u_x = c.x - a.x;
     const double u_y = c.y - a.y;
     const double v_x = b.x - a.x;
@@ -33,15 +33,17 @@ std::vector<GatheringEvent> FindGatherEvents(const ItemGathererProvider & provid
     for (int gi = 0; gi < provider.GatherersCount(); ++gi) {
         Gatherer gatherer = provider.GetGatherer(gi);
 
-        for (int ii = 0; ii < provider.ItemsCount(); ++ii) {
-            Item item = provider.GetItem(ii);
+        if (gatherer.start_pos.x != gatherer.end_pos.x || gatherer.start_pos.y != gatherer.end_pos.y) {
+            for (int ii = 0; ii < provider.ItemsCount(); ++ii) {
+                Item item = provider.GetItem(ii);
 
-            CollectionResult collection_result = TryCollectPoint(gatherer.start_pos, gatherer.end_pos, item.position);
+                CollectionResult collection_result = TryCollectPoint(gatherer.start_pos, gatherer.end_pos, item.position);
 
-            if (collection_result.IsCollected(gatherer.width/2+item.width/2)) {
-                events.emplace_back(ii, gi, collection_result.sq_distance, collection_result.proj_ratio);
+                if (collection_result.IsCollected(gatherer.width/2+item.width/2)) {
+                    events.emplace_back(ii, gi, collection_result.sq_distance, collection_result.proj_ratio);
+                }
             }
-        } 
+        }
     }
     
     std::sort(events.begin(), events.end(), CompareGatheringEvents);

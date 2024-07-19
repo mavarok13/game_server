@@ -66,16 +66,16 @@ std::string GetMethodNotAllowed_s(std::string_view methods) {
 } 
 
 // * Get JSON Invalid argument
-json::value GetInvalidArgument(const char * msg) {
+json::value GetInvalidArgument(std::string_view msg) {
 
     json::object obj;
 
     obj [ json_fields::RESPONSE_STATUS_CODE ] = "invalidArgument";
-    obj [ json_fields::RESPONSE_MESSAGE ] = msg;
+    obj [ json_fields::RESPONSE_MESSAGE ] = msg.data();
 
     return json::value(obj);
 }
-std::string GetInvalidArgument_s(const char * msg) {
+std::string GetInvalidArgument_s(std::string_view msg) {
 
     return json::serialize(GetInvalidArgument(msg));
 }
@@ -203,6 +203,24 @@ json::value GetTokenAndPlayerId(std::string_view token, int player_id) {
 std::string GetTokenAndPlayerId_s(std::string_view token, int player_id) {
 
     return json::serialize(GetTokenAndPlayerId(token, player_id));
+}
+
+// * Get JSON unknown token
+json::value GetUnknownToken() {
+    json::value val = {{"code", "unknownToken"}, {"message", "Player token has not been found"}};
+    return val;
+}
+std::string GetUnknownToken_s() {
+    return json::serialize(GetUnknownToken());
+}
+
+// * Get JSON invalid token
+json::value GetInvalidToken() {
+    json::value val = {{"code", "invalidToken"}, {"message", "Authorization header is missing or not incorrect"}};
+    return val;
+}
+std::string GetInvalidToken_s() {
+    return json::serialize(GetInvalidToken());
 }
 
 // * Get players list

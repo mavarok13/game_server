@@ -28,8 +28,8 @@ json::value GetMethodNotAllowed(std::string_view methods);
 std::string GetMethodNotAllowed_s(std::string_view methods);
 
 // * Get JSON Invalid argument
-json::value GetInvalidArgument(const char * msg);
-std::string GetInvalidArgument_s(const char * msg);
+json::value GetInvalidArgument(std::string_view msg);
+std::string GetInvalidArgument_s(std::string_view msg);
 
 // * Get JSON of error: Map Not Found
 json::value GetMapNotFound ();
@@ -48,6 +48,14 @@ std::string GetMapWithExtraData_s(const model::Map & map, const extra_data::MapE
 // * Get JSON that keep token and player id
 json::value GetTokenAndPlayerId(std::string_view token, int player_id);
 std::string GetTokenAndPlayerId_s(std::string_view token, int player_id);
+
+// * Get JSON unknown token
+json::value GetUnknownToken();
+std::string GetUnknownToken_s();
+
+// * Get JSON invalid token
+json::value GetInvalidToken();
+std::string GetInvalidToken_s();
 
 // * Get players list
 json::value GetPlayers(model::GameSession * session);

@@ -2,7 +2,7 @@
 
 #include <boost/beast.hpp>
 
-#include "http_path_utils.h"
+#include "http_utils.h"
 
 namespace endpoint {
 
@@ -21,7 +21,7 @@ public:
 
     bool IsMatch(const fs::path & path, http::verb method) const {
 
-        return method_ == method && ( (args_count_ == 0 && http_path_utils::MatchPaths(path, path_)) || (args_count_ > 0 && http_path_utils::PathBased(path, path_) == args_count_) || (is_root_ && http_path_utils::PathBased(path, path_) >= 0) );
+        return method_ == method && ( (args_count_ == 0 && http_utils::MatchPaths(path, path_)) || (args_count_ > 0 && http_utils::PathBased(path, path_) == args_count_) || (is_root_ && http_utils::PathBased(path, path_) >= 0) );
     }
 
     void Invoke(const HttpRequest & request) {

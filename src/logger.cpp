@@ -3,7 +3,7 @@
 
 #include <boost/json.hpp>
 
-#include "logger.hpp"
+#include "logger.h"
 
 void ConsoleJsonFormatter(logging::record_view const& rv, logging::formatting_ostream & fos) {
 
