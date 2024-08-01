@@ -12,6 +12,7 @@
 #include <optional>
 #include <cstdlib>
 #include <cmath>
+#include <filesystem>
 
 #include "model.h"
 #include "app.h"
@@ -24,12 +25,15 @@
 #include "ticker.h"
 #include "command_line_args.h"
 #include "extra_data.h"
+#include "save_manager.h"
+#include "serializer.h"
 
 using namespace std::literals;
 namespace net = boost::asio;
 namespace beast = boost::beast;
 namespace sys = boost::system;
 namespace json = boost::json;
+namespace fs = std::filesystem;
 
 using HttpRequest = beast::http::request<beast::http::string_body>;
 using HttpResponse = beast::http::response<beast::http::string_body>;
@@ -59,9 +63,11 @@ void RunWorkers(unsigned n, const Fn& fn) {
     auto add = desc.add_options();
     add("help,h", "produce help message");
     add("tick-period,t", po::value(&args.tick_period)->value_name("milliseconds"), "set tick period");
+    add("save-state-period", po::value(&args.autosave_period)->value_name("milliseconds"), "set autosave period");
     add("config-file,c", po::value(&args.config_file)->value_name("file"), "set config file path");   
-    add("www-root,w", po::value(&args.wwwroot_dir)->value_name("dir"), "set static files root");   
-    add("randomize-spawn-points", "spawn dogs at random positions");   
+    add("www-root,w", po::value(&args.wwwroot_dir)->value_name("dir"), "set static files root");
+    add("state-file", po::value(&args.save_file_path)->value_name("file"), "autosave file path");
+    add("randomize-spawn-points", "spawn dogs at random positions");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -74,6 +80,7 @@ void RunWorkers(unsigned n, const Fn& fn) {
 
     if (!vm.contains("config-file")) throw std::runtime_error("Config file has not been specified");
     if (!vm.contains("www-root")) throw std::runtime_error("Static files have not been specified");
+    if (!vm.contains("save-state-period")) args.autosave_period = -1;
     args.random_position = vm.contains("randomize-spawn-points");
     args.no_tick_period = !vm.contains("tick-period");
 
@@ -93,9 +100,14 @@ int main(int argc, const char* argv[]) {
 //  *   LOGGING SETUP
         SetupConsoleLogging();
 
-
 //  *   LOAD GAME CONFIG
         model::Game game = json_loader::LoadGame(args->config_file);
+
+        if (!args->save_file_path.empty() && fs::is_regular_file(args->save_file_path)) {
+            std::string serialized_data = save_manager::LoadSavedFile(args->save_file_path);
+            serializer::DeserializeGame(serialized_data, game);
+        }
+
         std::vector<extra_data::MapExtraData> maps_extra_data = json_loader::GetMapsExtraData(args->config_file);
 
         game.SetRandomPosition(args->random_position);
@@ -104,13 +116,29 @@ int main(int argc, const char* argv[]) {
 // *    LOOT_GENERATOR
         loot_gen::LootGenerator lg(std::chrono::milliseconds{(int)game.GetLootSpawnPeriod()*1000}, game.GetLootSpawnProbability());
 
+// *    CREATE IO CONTEXT
         const unsigned num_threads = std::thread::hardware_concurrency();
         net::io_context ioc(num_threads);
 
+        auto strand = net::make_strand(ioc);
+
+// *    SETUP AUTOSAVE
+        app::Application application;
+        save_manager::Saver saver(std::chrono::milliseconds(args->autosave_period), [&game, &args, &strand] () {
+            net::dispatch(strand, [&game, &args] {
+                std::string ser_data = serializer::SerializeGame(game);
+                save_manager::SaveToFile(args->save_file_path, ser_data);
+            });
+        });
+
+//  *   SIGNAL HANDLER
         net::signal_set signal_set(ioc, SIGINT, SIGTERM);
 
-        signal_set.async_wait([&ioc] (const sys::error_code & ec, int signal_number) {
-            
+        signal_set.async_wait([&ioc, &args, &saver] (const sys::error_code & ec, int signal_number) {
+            if (!args->save_file_path.empty()) {
+                saver.Save();
+            }
+
             if (ec) {
                 BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", EXIT_FAILURE }, {"exception", ec.what()}}) << logging::add_value(message_, "server exited");
             }
@@ -120,11 +148,15 @@ int main(int argc, const char* argv[]) {
             ioc.stop();
         });
 
+//  *   CREATE REQUEST HANDLER
+        http_handler::RequestHandler handler{game, application, lg, maps_extra_data, strand, root};
 
-        auto strand = net::make_strand(ioc);
+//  *   SUBSCRIBE HANDLER FOR TICKER
+        application.DoOnTick([&saver] (std::chrono::milliseconds delta_time) {
+            saver.Save(delta_time);
+        });
 
-        http_handler::RequestHandler handler{game, lg, maps_extra_data, strand, root};
-
+//  *   LISTEN AND WAIT FOR NEW CONNECTION
         const auto address = net::ip::make_address("0.0.0.0");
         constexpr net::ip::port_type port = 8080;
 
@@ -132,8 +164,9 @@ int main(int argc, const char* argv[]) {
             handler(std::move(req), send);
         });
 
+//  *   TICKER
         if (!args->no_tick_period) {
-            std::make_shared<ticker::Ticker>(ticker::Ticker{strand, std::chrono::milliseconds(args->tick_period), [&game, &lg] (int interval) {
+            std::make_shared<ticker::Ticker>(ticker::Ticker(strand, std::chrono::milliseconds(args->tick_period), [&game, &application, &lg] (int interval) {
                 game.Tick(interval, [&game, &lg, &interval] {
                     for (model::GameSession & session : game.GetSessions()) {
 //  *   *   *   *   *   Generate new items on the session map
@@ -143,7 +176,8 @@ int main(int argc, const char* argv[]) {
                         collision_detector::UpdateSessionItems(session, interval);
                     }
                 });
-            }})->Start();
+                application.Tick(std::chrono::milliseconds(interval));
+            }))->Start();
 
         }
         

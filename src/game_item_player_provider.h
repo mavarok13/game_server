@@ -15,7 +15,7 @@ public:
     }
 
     Item GetItem(size_t idx) const override {
-        geom::Point2D position(items_[idx].GetPosition().x, items_[idx].GetPosition().y);
+        geom::Point2D position(items_.at(idx).GetPosition().x, items_[idx].GetPosition().y);
 
         return Item{position, model::Item::WIDTH};
     }
@@ -25,8 +25,8 @@ public:
     }
 
     Gatherer GetGatherer(size_t idx) const override {
-        geom::Point2D start_pos(dogs_[idx].GetPrevPosition().x, dogs_[idx].GetPrevPosition().y);
-        geom::Point2D end_pos(dogs_[idx].GetPosition().x, dogs_[idx].GetPosition().y);
+        geom::Point2D start_pos(dogs_.at(idx).GetPrevPosition().x, dogs_.at(idx).GetPrevPosition().y);
+        geom::Point2D end_pos(dogs_.at(idx).GetPosition().x, dogs_.at(idx).GetPosition().y);
 
         return Gatherer{start_pos, end_pos, model::Dog::WIDTH};
     }

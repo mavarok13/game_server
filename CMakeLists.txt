@@ -49,6 +49,10 @@ add_executable(game_server
 	src/collision_detector.cpp
 	src/game_item_player_provider.h
 	src/game_office_player_provider.h
+	src/save_manager.h
+	src/save_manager.cpp
+	src/serializer.h
+	src/serializer.cpp
 	src/update_items.h
 	src/update_items.cpp
 	src/extra_data.h
@@ -76,7 +80,18 @@ add_executable(http_utils_tests
 	src/http_utils.cpp
 )
 
+add_executable(serialize_tests
+	tests/serialization_tests.cpp
+	src/save_manager.h
+	src/save_manager.cpp
+	src/serializer.h
+	src/serializer.cpp
+	src/json_loader.h
+	src/json_loader.cpp
+)
+
 target_link_libraries(game_server PUBLIC GameLib PRIVATE Threads::Threads PUBLIC CONAN_PKG::boost)
 target_link_libraries(loot_generator_test PRIVATE CONAN_PKG::catch2)
 target_link_libraries(collision_detector_test PRIVATE CONAN_PKG::catch2)
 target_link_libraries(http_utils_tests PRIVATE CONAN_PKG::catch2)
+target_link_libraries(serialize_tests PUBLIC GameLib PRIVATE CONAN_PKG::catch2 PRIVATE CONAN_PKG::boost)

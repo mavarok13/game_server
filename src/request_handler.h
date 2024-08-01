@@ -1,4 +1,6 @@
+#ifndef BOOST_BEAST_USE_STD_STRING_VIEW
 #define BOOST_BEAST_USE_STD_STRING_VIEW
+#endif
 
 #pragma once
 
@@ -57,8 +59,8 @@ class RequestHandler {
 public:
     using Strand = net::strand<net::io_context::executor_type>;
 
-    RequestHandler(model::Game& game, loot_gen::LootGenerator& generator, std::vector<extra_data::MapExtraData> maps_extra_data, Strand strand, const fs::path & root)
-        : game_{game}, generator_{generator}, maps_extra_data_{maps_extra_data}, strand_{strand}, root_{root} {
+    RequestHandler(model::Game& game, app::Application & application, loot_gen::LootGenerator& generator, std::vector<extra_data::MapExtraData> maps_extra_data, Strand strand, const fs::path & root)
+        : game_{game}, app_{application}, generator_{generator}, maps_extra_data_{maps_extra_data}, strand_{strand}, root_{root} {
     }
 
     RequestHandler(const RequestHandler&) = delete;
@@ -448,19 +450,14 @@ public:
                     model::Direction dir;
 
                     if (val.at("move").as_string() == "L") {
-
                         dir = model::Direction::WEST;
                     } else if (val.at("move").as_string() == "R") {
-                        
                         dir = model::Direction::EAST;
                     } else if (val.at("move").as_string() == "U") {
-
                         dir = model::Direction::NORTH;
                     } else if (val.at("move").as_string() == "D") {
-
                         dir = model::Direction::SOUTH;
                     } else if (val.at("move").as_string() == "") {
-
                         dir = model::Direction::ZERO;
                     } else {
                         HttpResponse response = ConstructBadRequestResponse(req, "Incorrect Json: invalid value in field \"move\""sv);
@@ -468,20 +465,16 @@ public:
                     }
 
                     model::Dog * dog = player->GetSession()->GetDogById(player->GetPlayerId());
-                    if (dir == model::Direction::NORTH) {
 
+                    if (dir == model::Direction::NORTH) {
                         dog->SetSpeed(model::Vector2{0, -player->GetSession()->GetMap()->GetDogSpeed()});
                     } else if (dir == model::Direction::EAST) {
-
                         dog->SetSpeed(model::Vector2{player->GetSession()->GetMap()->GetDogSpeed(), 0});
                     } else if (dir == model::Direction::SOUTH) {
-
                         dog->SetSpeed(model::Vector2{0, player->GetSession()->GetMap()->GetDogSpeed()});
                     } else if (dir == model::Direction::WEST) {
-                        
                         dog->SetSpeed(model::Vector2{-player->GetSession()->GetMap()->GetDogSpeed(), 0});
                     } else {
-
                         dog->SetSpeed(model::Vector2{0, 0});
                     }
 
@@ -574,6 +567,8 @@ public:
                         }
                     });
 
+                    self->app_.Tick(std::chrono::milliseconds(time_delta));
+
                     response = ConstructOkResponse(req);
                     return send(std::move(response), start_response_time);
                 } catch (std::exception & ex) {
@@ -660,6 +655,7 @@ public:
 
 private:
     model::Game& game_;
+    app::Application & app_;
     loot_gen::LootGenerator& generator_;
     std::vector<extra_data::MapExtraData> maps_extra_data_;
     Strand strand_;
