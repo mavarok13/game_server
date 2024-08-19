@@ -12,29 +12,21 @@ HttpResponse ConstructJsonResponse (http::status status, unsigned version, bool 
     return response;
 }
 
-HttpFileResponse ConstructFileResponse (HttpRequest request, const fs::path & root, sys::error_code & ec) {
-    std::string target_str(request.target().data(), request.target().size());
-
-    fs::path root_path;
-    root_path += root;
-
-    if (target_str == "/" || target_str == "") {
-
-        target_str = "/index.html";
+HttpFileResponse ConstructFileResponse (fs::path root, fs::path request_target, unsigned version, bool keep_alive, sys::error_code & ec) {
+    if (request_target.filename().empty()) {
+        request_target.replace_filename("index.html");
     }
     
-    root_path += target_str.c_str();
-
-    root_path = fs::weakly_canonical(root_path);
+    root += request_target;
 
     http::file_body::value_type file;
 
-    HttpFileResponse response(http::status::ok, request.version());
-    response.keep_alive(request.keep_alive());
+    HttpFileResponse response(http::status::ok, version);
+    response.keep_alive(keep_alive);
 
-    file.open(root_path.c_str(), beast::file_mode::read, ec);
+    file.open(root.c_str(), beast::file_mode::read, ec);
 
-    response.set(http::field::content_type, http_content_type::GetContentTypeByExtension({root_path.extension().c_str()}));
+    response.set(http::field::content_type, http_content_type::GetContentTypeByExtension({root.extension().c_str()}));
     response.body() = std::move(file);
     response.prepare_payload();
 
@@ -42,14 +34,14 @@ HttpFileResponse ConstructFileResponse (HttpRequest request, const fs::path & ro
 }
 
 // RESPONSE: OK
-HttpResponse ConstructOkResponse(HttpRequest request) {
-    HttpResponse response = ConstructJsonResponse(http::status::ok, request.version());
+HttpResponse ConstructOkResponse(unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::ok, version);
     response.set(http::field::cache_control, "no-cache");
 
     return response;
 }
-HttpResponse ConstructOkResponse(HttpRequest request, std::string_view body) {
-    HttpResponse response = ConstructOkResponse(request);
+HttpResponse ConstructOkResponse(std::string_view body, unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructOkResponse(version, keep_alive);
     response.body() = body;
     response.prepare_payload();
 
@@ -57,8 +49,8 @@ HttpResponse ConstructOkResponse(HttpRequest request, std::string_view body) {
 }
 
 // RESPONSE: METHOD NOT ALLOWED
-HttpResponse ConstructMethodNotAllowedResponse (HttpRequest request, std::string_view methods) {
-    HttpResponse response = ConstructJsonResponse(http::status::method_not_allowed, request.version());
+HttpResponse ConstructMethodNotAllowedResponse (std::string_view methods, unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::method_not_allowed, version);
     response.set(http::field::allow, methods);
     response.set(http::field::cache_control, "no-cache");
     response.body() = json_builder::GetMethodNotAllowed_s(methods);
@@ -68,8 +60,8 @@ HttpResponse ConstructMethodNotAllowedResponse (HttpRequest request, std::string
 }
 
 // RESPONSE: INVALID ARGUMENT
-HttpResponse ConstructInvalidArgumentResponse(HttpRequest request, std::string_view msg) {
-    HttpResponse response = ConstructJsonResponse(http::status::bad_request, request.version());
+HttpResponse ConstructInvalidArgumentResponse(std::string_view msg, unsigned version, bool keep_alive) {
+    HttpResponse response{ConstructJsonResponse(http::status::bad_request, version)};
     response.set(http::field::cache_control, "no-cache");
     response.body() = json_builder::GetInvalidArgument_s(msg);
     response.prepare_payload();
@@ -78,16 +70,16 @@ HttpResponse ConstructInvalidArgumentResponse(HttpRequest request, std::string_v
 }
 
 // RESPONSE: MAP NOT FOUNDs
-HttpResponse ConstructMapNotFoundResponse(HttpRequest request) {
-    HttpResponse response = ConstructJsonResponse(http::status::not_found, request.version());
+HttpResponse ConstructMapNotFoundResponse(unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::not_found, version);
     response.set(http::field::cache_control, "no-cache");
     response.body() = json_builder::GetMapNotFound_s();
     response.prepare_payload();
 
     return response;
 }
-HttpResponse ConstructMapNotFoundResponse_head(HttpRequest request) {
-    HttpResponse response = ConstructJsonResponse(http::status::not_found, request.version());
+HttpResponse ConstructMapNotFoundResponse_head(unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::not_found, version);
     response.set(http::field::cache_control, "no-cache");
     response.prepare_payload();
 
@@ -95,8 +87,8 @@ HttpResponse ConstructMapNotFoundResponse_head(HttpRequest request) {
 }
 
 // RESPONSE: BAD REQUEST
-HttpResponse ConstructBadRequestResponse(HttpRequest request, std::string_view body) {
-    HttpResponse response = ConstructJsonResponse(http::status::bad_request, request.version());
+HttpResponse ConstructBadRequestResponse(std::string_view body, unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::bad_request, version);
     response.set(http::field::cache_control, "no-cache");
     response.body() = body;
     response.prepare_payload();
@@ -104,8 +96,8 @@ HttpResponse ConstructBadRequestResponse(HttpRequest request, std::string_view b
     return response;
 }
 
-HttpResponse ConstructBadRequestResponse(HttpRequest request) {
-    HttpResponse response = ConstructJsonResponse(http::status::bad_request, request.version());
+HttpResponse ConstructBadRequestResponse(unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::bad_request, version);
     response.set(http::field::cache_control, "no-cache");
     response.prepare_payload();
 
@@ -113,16 +105,16 @@ HttpResponse ConstructBadRequestResponse(HttpRequest request) {
 }
 
 // RESPONSE: UNAUTHORIZED
-HttpResponse ConstructUnauthorizedResponse(HttpRequest request, std::string_view body) {
-    HttpResponse response = ConstructJsonResponse(http::status::unauthorized, request.version());
+HttpResponse ConstructUnauthorizedResponse(std::string_view body, unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::unauthorized, version);
     response.set(http::field::cache_control, "no-cache");
     response.body() = body;
     response.prepare_payload();
 
     return response;
 }
-HttpResponse ConstructUnauthorizedResponse(HttpRequest request) {
-    HttpResponse response = ConstructJsonResponse(http::status::unauthorized, request.version());
+HttpResponse ConstructUnauthorizedResponse(unsigned version, bool keep_alive) {
+    HttpResponse response = ConstructJsonResponse(http::status::unauthorized, version);
     response.set(http::field::cache_control, "no-cache");
     response.prepare_payload();
 

@@ -34,7 +34,6 @@ std::string GetBadRequest_s () {
 
 // * Get JSON that inform about json parse error
 json::value GetParseJsonError(std::string_view message) {
-
     json::object obj;
 
     obj [ json_fields::RESPONSE_STATUS_CODE ] = "invalidArgument";
@@ -43,13 +42,11 @@ json::value GetParseJsonError(std::string_view message) {
     return json::value(obj);
 }
 std::string GetParseJsonError_s(std::string_view message) {
-
     return json::serialize(GetParseJsonError(message));
 }
 
 // * Get JSON with method not allowed
 json::value GetMethodNotAllowed(std::string_view methods) {
-
     json::object obj;
 
     std::stringstream ss;
@@ -67,7 +64,6 @@ std::string GetMethodNotAllowed_s(std::string_view methods) {
 
 // * Get JSON Invalid argument
 json::value GetInvalidArgument(std::string_view msg) {
-
     json::object obj;
 
     obj [ json_fields::RESPONSE_STATUS_CODE ] = "invalidArgument";
@@ -192,7 +188,6 @@ std::string GetMapWithExtraData_s(const model::Map & map, const extra_data::MapE
 
 // * Get JSON that keep token and player id
 json::value GetTokenAndPlayerId(std::string_view token, int player_id) {
-
     json::object obj;
 
     obj [json_fields::AUTH_TOKEN] = token.data();
@@ -201,7 +196,6 @@ json::value GetTokenAndPlayerId(std::string_view token, int player_id) {
     return json::value(obj);
 }
 std::string GetTokenAndPlayerId_s(std::string_view token, int player_id) {
-
     return json::serialize(GetTokenAndPlayerId(token, player_id));
 }
 
@@ -216,7 +210,7 @@ std::string GetUnknownToken_s() {
 
 // * Get JSON invalid token
 json::value GetInvalidToken() {
-    json::value val = {{"code", "invalidToken"}, {"message", "Authorization header is missing or not incorrect"}};
+    json::value val = {{"code", "invalidToken"}, {"message", "Authorization header is missing"}};
     return val;
 }
 std::string GetInvalidToken_s() {
@@ -225,12 +219,10 @@ std::string GetInvalidToken_s() {
 
 // * Get players list
 json::value GetPlayers(model::GameSession * session) {
-
     json::object obj_players;
 
     for (app::Player & p : app::PlayersManager::Instance().GetPlayers()) {
-
-        if (session == p.GetSession()) {
+        if (session->GetId() == p.GetSessionId()) {
             json::object obj_player_data;
 
             obj_player_data [ json_fields::PLAYER_NAME ] = p.GetPlayerName().data();
@@ -242,21 +234,17 @@ json::value GetPlayers(model::GameSession * session) {
     return json::value(obj_players);
 }
 std::string GetPlayers_s(model::GameSession * session) {
-
     return json::serialize(GetPlayers(session));
 }
 
 // * Get players info
 json::value GetPlayersInfo(model::GameSession * session) {
-
     json::object obj_state;
     json::object obj_players;
     json::object obj_items;
 
     for (app::Player & p : app::PlayersManager::Instance().GetPlayers()) {
-
-        if (session == p.GetSession()) {
-
+        if (session->GetId() == p.GetSessionId()) {
             json::object obj_player_data;
 
             model::Dog * dog = session->GetDogById(p.GetPlayerId());
@@ -301,8 +289,8 @@ json::value GetPlayersInfo(model::GameSession * session) {
         json::object obj_item_data;
 
         json::array item_pos;
-        item_pos.emplace_back((float)item.GetPosition().x);
-        item_pos.emplace_back((float)item.GetPosition().y);
+        item_pos.emplace_back(static_cast<float>(item.GetPosition().x));
+        item_pos.emplace_back(static_cast<float>(item.GetPosition().y));
 
         obj_item_data [ json_fields::ITEM_TYPE ] = item.GetType().GetType();
         obj_item_data [ json_fields::ITEM_POSITION ] = item_pos;
@@ -317,9 +305,27 @@ json::value GetPlayersInfo(model::GameSession * session) {
 }
 
 std::string GetPlayersInfo_s(model::GameSession * session) {
-
     return json::serialize(GetPlayersInfo(session));
 }
 
-// * namespace json__build
+// * Get top game results
+json::array GetTopGameResults(std::vector<app::GameResult> results) {
+    json::array top_results_arr;
+
+    for (app::GameResult & game_result : results) {
+        json::object result_obj;
+
+        result_obj[ json_fields::TOP_GAME_RESULTS_PLAYER_NAME ] = game_result.name_;
+        result_obj[ json_fields::TOP_GAME_RESULTS_PLAYER_SCORES ] = game_result.scores_;
+        result_obj[ json_fields::TOP_GAME_RESULTS_PLAYER_PLAYING_TIME ] = game_result.session_duration_;
+
+        top_results_arr.emplace_back(result_obj);
+    }
+
+    return top_results_arr;
 }
+std::string GetTopGameResults_s(std::vector<app::GameResult> results) {
+    return json::serialize(GetTopGameResults(results));
+}
+
+} //namespace json__build

@@ -1,16 +1,22 @@
+//TO DO: 
+//line 395 add RandomGenerator GameSession::NewPlayer
+//item id to unsigned int type and than in serializer.h
+
 #pragma once
 
+#include <cstdlib>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
-#include <cstdlib>
 
 #include "tagged.h"
 #include "model_properties.h"
 #include "random_generator.h"
 
 namespace model {
+
+static const double MILLISECONDS_IN_SECOND = 1000.0;
 
 using Dimension = int;
 using Coord = Dimension;
@@ -31,6 +37,9 @@ public:
     double x, y;
 };
 
+bool operator==(const Vector2 & v1, const Vector2 & v2);
+bool operator!=(const Vector2 & v1, const Vector2 & v2);
+
 struct Size {
     Dimension width, height;
 };
@@ -46,11 +55,11 @@ struct Offset {
 
 class Road {
     struct HorizontalTag {
-        explicit HorizontalTag() = default;
+        HorizontalTag() = default;
     };
 
     struct VerticalTag {
-        explicit VerticalTag() = default;
+        VerticalTag() = default;
     };
 
 public:
@@ -136,7 +145,11 @@ class ItemType {
 public:
     ItemType(int type, unsigned int cost) : type_(type), cost_(cost) {}
 
-    int GetType() {
+    int GetType() noexcept {
+        return type_;
+    }
+
+    int GetType() const noexcept {
         return type_;
     }
 
@@ -256,8 +269,6 @@ public:
         inventory_size_ = inventory_size;
     }
 
-
-
 private:
     using OfficeIdToIndex = std::unordered_map<Office::Id, size_t, util::TaggedHasher<Office::Id>>;
 
@@ -277,7 +288,12 @@ private:
 
 class Dog {
 public:
-    Dog(unsigned int id, Vector2 position, Vector2 speed = Vector2{0, 0}) : id_(id), position_(position), speed_(speed) {}
+    Dog(unsigned int id, Vector2 position, Vector2 speed = Vector2{0, 0}) {
+        id_ = id;
+        position_ = position;
+        speed_ = speed;
+        items_.reserve(3);
+    }
 
     unsigned int GetId() {
         return id_;
@@ -319,11 +335,11 @@ public:
         return direction_;
     }
 
-    std::vector<Item> GetItems() {
+    std::vector<Item> & GetItems() {
         return items_;
     }
 
-    std::vector<Item> GetItems() const {
+    const std::vector<Item> & GetItems() const {
         return items_;
     }
 
@@ -361,10 +377,10 @@ public:
 private:
     unsigned int id_;
     Vector2 position_;
-    Vector2 prev_position_;
+    Vector2 prev_position_ = {0, 0};
     Vector2 speed_ = {0, 0};
     Direction direction_ = Direction::NORTH;
-    std::vector<Item> items_;
+    std::vector<Item> items_{};
 };
 
 class GameSession {
@@ -372,10 +388,19 @@ public:
     using Dogs = std::vector<Dog>;
     using Items = std::vector<Item>;
 
-    explicit GameSession(Map * map, bool random_position = false) : map_(map), random_position_(random_position) {}
+    GameSession(unsigned int id, Map * map, bool random_position = false) {
+        id_ = id;
+        map_ = map;
+        random_position_ = random_position;
+        dogs_.reserve(25);
+        items_.reserve(10);
+    }
+
+    unsigned int GetId() {
+        return id_;
+    }
 
     Map * GetMap() {
-
         return map_;
     }
 
@@ -386,7 +411,7 @@ public:
         position.y = map_->GetRoads().front().GetStart().y;
         
         if (random_position_) {
-            Road picked_road = map_->GetRoads()[std::rand()%map_->GetRoads().size()];
+            Road picked_road = map_->GetRoads().at(std::rand()%map_->GetRoads().size());
 
             if (picked_road.IsHorizontal()) {
                 double x = picked_road.GetStart().x+(picked_road.GetEnd().x-picked_road.GetStart().x)*RandomGenerator::GenerateUpTo(100)/100;
@@ -414,14 +439,22 @@ public:
         return dogs_;
     }
 
+    const Dogs & GetDogs() const {
+        return dogs_;
+    }
+
     Items & GetItems() {
+        return items_;
+    }
+
+    const Items & GetItems() const {
         return items_;
     }
 
     void AddItems(int count) {
         for (int i = 0; i < count; ++i) {
             int picked_item_type = std::rand()%map_->GetItemsTypes().size();
-            Road picked_road = map_->GetRoads()[std::rand()%map_->GetRoads().size()];
+            Road picked_road = map_->GetRoads().at(std::rand()%map_->GetRoads().size());
 
             Point position{0, 0};
 
@@ -433,7 +466,7 @@ public:
                 position.y = picked_road.GetStart().y+(picked_road.GetEnd().y-picked_road.GetStart().y)*RandomGenerator::GenerateUpTo(100)/100;
             }
 
-            items_.emplace_back(++item_last_id_, map_->GetItemsTypes()[picked_item_type], position);
+            items_.emplace_back(++item_last_id_, map_->GetItemsTypes().at(picked_item_type), position);
         }
     }
 
@@ -446,13 +479,23 @@ public:
         }
     }
 
+    void RemoveDogById(int id) {
+        for (auto dog_it = dogs_.begin(); dog_it != dogs_.end(); ++dog_it) {
+            if (dog_it->GetId() == id) {
+                dogs_.erase(dog_it);
+                break;
+            }
+        }
+    }
+
     void Update(unsigned int delta_time);
 
 private:
-    Dogs dogs_;
+    unsigned int id_ = 0;
+    Dogs dogs_{};
     Map * map_;
-    Items items_;
-    bool random_position_ = false;
+    Items items_{};
+    bool random_position_;
 
     int item_last_id_ = 0;
 };
@@ -475,30 +518,34 @@ public:
     }
 
     GameSession * NewSession(Map * map) {
-
         for (GameSession & session : sessions_) {
-            
             if (session.GetMap() == map) {
-
                 return &session;
             }
         }
 
-        sessions_.emplace_back(map, random_position_);
+        sessions_.emplace_back(++last_session_id_, map, random_position_);
 
         return &sessions_.back();
     }
 
     std::vector<GameSession> & GetSessions() {
-
         return sessions_;
+    }
+
+    GameSession * GetSessionById(unsigned int session_id) {
+        for (GameSession & session : sessions_) {
+            if (session.GetId() == session_id) {
+                return &session;
+            }
+        }
+
+        return nullptr;
     }
 
     template <typename Action>
     void Tick(int delta_time, Action&& action) {
-
         for (GameSession & session : sessions_) {
-
             session.Update(delta_time);
         }
         action();
@@ -549,6 +596,14 @@ public:
         loot_spawn_probability_ = loot_spawn_probability;
     }
 
+    double GetDogIdleTimeThreshold() {
+        return dog_idle_time_threshold_;
+    }
+
+    void SetDogIdleTimeThreshold(double threshold) {
+        dog_idle_time_threshold_ = threshold;
+    }
+
 private:
     using MapIdHasher = util::TaggedHasher<Map::Id>;
     using MapIdToIndex = std::unordered_map<Map::Id, size_t, MapIdHasher>;
@@ -563,6 +618,10 @@ private:
 
     bool timer_stopped_ = false;
     bool random_position_ = false;
+
+    double dog_idle_time_threshold_ = 1.0;
+
+    int last_session_id_ = 0;
 };
 
 std::vector<Road> GetDogStandRoads(const Dog & dog, const Map & map);
