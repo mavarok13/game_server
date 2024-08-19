@@ -136,7 +136,7 @@ class ItemType {
 public:
     ItemType(int type, unsigned int cost) : type_(type), cost_(cost) {}
 
-    int GetType() {
+    int GetType() const {
         return type_;
     }
 
