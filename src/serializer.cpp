@@ -65,8 +65,8 @@ void serializer::DeserializeGame(std::string serialized_data, model::Game & game
         }
 
         for (serializer::PlayerSerializationProvider & player_ser_provider : players_manager_provider.players_providers) {
-            if (player_ser_provider.session_addr == session_ser_provider.addr) {
-                app::Player player(player_ser_provider.token, player_ser_provider.player_id, player_ser_provider.player_name, session);
+            if (player_ser_provider.session_id == session_ser_provider.id) {
+                app::Player player(player_ser_provider.token, player_ser_provider.player_id, player_ser_provider.player_name, player_ser_provider.session_id);
                 player.AddScores(player_ser_provider.scores);
                 app::PlayersManager::Instance().GetPlayers().emplace_back(player);
             }

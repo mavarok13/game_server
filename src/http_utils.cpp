@@ -1,5 +1,7 @@
 #include <string>
 
+#include <boost/algorithm/string.hpp>
+
 #include "http_utils.h"
 
 namespace http_utils {
@@ -7,6 +9,12 @@ namespace http_utils {
 int PathBased(fs::path target_path, fs::path base) {
     target_path = fs::weakly_canonical(target_path);
     base = fs::weakly_canonical(base);
+
+    std::vector<std::string> target_path_end_slitted;
+
+    boost::split(target_path_end_slitted, target_path.string(), boost::is_any_of("?"));
+
+    target_path.replace_filename(target_path_end_slitted.at(0));
 
     int after = -1;
 
@@ -37,12 +45,10 @@ bool MatchPaths(fs::path target_path, fs::path path) {
     path = fs::weakly_canonical(path);
 
     if ( std::distance(target_path.end(), target_path.begin()) != std::distance(path.end(), path.begin()) ) {
-
         return false;
     }
 
     for (auto tp = target_path.begin(), p = path.begin(); tp != target_path.end(); ++tp, ++p) {
-
         if (*tp != *p) {
 
             return false;

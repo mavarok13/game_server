@@ -65,5 +65,8 @@ std::string GetPlayers_s(model::GameSession * session);
 json::value GetPlayersInfo(model::GameSession * session);
 std::string GetPlayersInfo_s(model::GameSession * session);
 
-// * namespace json__build
-}
+// * Get top game results
+json::array GetTopGameResults(std::vector<app::GameResult> results);
+std::string GetTopGameResults_s(std::vector<app::GameResult> results);
+
+} //namespace json_build

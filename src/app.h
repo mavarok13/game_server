@@ -1,10 +1,12 @@
 #pragma once
 
-#include <random>
-#include <sstream>
-#include <iostream>
 #include <cstring>
 #include <chrono>
+#include <iostream>
+#include <random>
+#include <sstream>
+#include <memory>
+#include <vector>
 
 #include <boost/signals2.hpp>
 
@@ -13,6 +15,8 @@
 namespace sig = boost::signals2;
 
 namespace app {
+
+using namespace std::chrono_literals;
 
 class Application {
 public:
@@ -31,7 +35,7 @@ private:
 
 class Player {
 public:
-    Player (std::string token, int player_id, std::string player_name, model::GameSession * session) : token_(token), player_id_(player_id), player_name_(player_name), session_(session) {}
+    Player (const std::string & token, int player_id, const std::string & player_name, unsigned int session_id) : token_(token), player_id_(player_id), player_name_(player_name), session_id_(session_id) {}
 
     std::string GetToken() {
         return token_;
@@ -57,12 +61,8 @@ public:
         return player_name_;
     }
 
-    model::GameSession * GetSession() {
-        return session_;
-    }
-
-    model::GameSession * GetSession() const {
-        return session_;
+    unsigned int GetSessionId() const {
+        return session_id_;
     }
 
     unsigned int GetScores() noexcept {
@@ -77,18 +77,42 @@ public:
         scores_ += scores;
     }
 
+    std::chrono::duration<double> GetPlayingTime() {
+        return playing_time_;
+    }
+
+    void AddPlayingTime(std::chrono::duration<double> time) {
+        playing_time_ += time;
+    }
+
+    std::chrono::duration<double> GetIdleTime() {
+        return idle_time_;
+    }
+
+    void AddIdleTime(std::chrono::duration<double> time) {
+        idle_time_ += time;
+    }
+
+    void ResetIdleTime() {
+        idle_time_ = 0.0s;
+    }
+
 private:
-    model::GameSession * session_;
     std::string token_;
     int player_id_;
     std::string player_name_;
+    unsigned int session_id_;
 
     unsigned int scores_ = 0;
+
+    std::chrono::duration<double> playing_time_ = 0.0s;
+    std::chrono::duration<double> idle_time_ = 0.0s;
 };
 
 class PlayerTokens {
 public:
     static PlayerTokens & Instance() {
+
         static PlayerTokens pt;
 
         return pt;
@@ -104,6 +128,7 @@ public:
         half_hex_string << std::hex << gen1;
 
         if (half_hex_string.str().size() < 16) {
+
             for (int i = 0; i < 16 - half_hex_string.str().size(); ++i) {
                 ss << "0";
             }
@@ -115,6 +140,7 @@ public:
         half_hex_string << std::hex << gen2;
 
         if (half_hex_string.str().size() < 16) {
+
             for (int i = 0; i < 16 - half_hex_string.str().size(); ++i) {
                 ss << "0";
             }
@@ -124,6 +150,7 @@ public:
 
         return ss.str();
     }
+
 private:
     PlayerTokens() {}
 
@@ -146,24 +173,35 @@ public:
         return pm;
     }
 
-    Player AddNewPlayer(std::string player_name, model::GameSession * session) {
+    Player & AddNewPlayer(const std::string & player_name, model::GameSession * session) {
         std::string token{PlayerTokens::Instance().GetToken()};
-        Player player{token, player_id_++, player_name, session};
 
-        players_.emplace_back(player);
+        players_.emplace_back(token, player_id_++, player_name, session->GetId());
 
-        session->NewPlayer(player.GetPlayerId());
+        session->NewPlayer(players_.back().GetPlayerId());
 
-        return player;
+        return players_.back();
     }
 
-    Player * GetPlayerByToken(std::string token) {
+    Player * GetPlayerByToken(const std::string & token) {
         Player * player = 0;
 
         for (Player & p : players_) {
             if (std::strcmp(p.GetToken().c_str(), token.c_str()) == 0) {
                 player = &p;
                 break;
+            }
+        }
+
+        return player;
+    }
+
+    Player * GetPlayerById(int id) {
+        Player * player = 0;
+
+        for (Player & p : players_) {
+            if (p.GetPlayerId() == id) {
+                player = &p;
             }
         }
 
@@ -185,10 +223,55 @@ public:
     void SetNextPlayerId(int player_id) {
         player_id_ = player_id;
     }
+
+    void RemovePlayer(unsigned int id) {
+        for (auto player_it = players_.begin(); player_it != players_.end(); ++player_it) {
+            if (id == player_it->GetPlayerId()) {
+                players_.erase(player_it);
+                break;
+            }
+        }
+    }
 private:
     PlayersManager() {}
 
     int player_id_ = 0;
     std::vector<Player> players_;
+};
+
+struct GameResult {
+public:
+    GameResult (std::string_view name, unsigned int scores, unsigned int session_duration) : name_{name.begin(), name.end()}, scores_{scores}, session_duration_{session_duration} {}
+
+    std::string name_;
+    unsigned int scores_;
+    unsigned int session_duration_;
+};
+
+class IGameResultRepository {
+public:
+    virtual std::vector<GameResult> GetResults(unsigned int offset = 0, unsigned int results_count = max_results_count_) = 0;
+    virtual void AddResult(const app::GameResult & game_result) = 0;
+protected:
+    ~IGameResultRepository() {}
+private:
+    static const unsigned int max_results_count_ = 100;
+};
+
+class IUnitOfWork {
+public:
+    virtual IGameResultRepository * Results() = 0;
+    virtual void Commit() = 0;
+protected:
+    ~IUnitOfWork() {}
+
+};
+
+class IUnitOfWorkFactory {
+public:
+    virtual std::shared_ptr<IUnitOfWork> NewUnitOfWork() = 0; 
+
+protected:
+    ~IUnitOfWorkFactory() {}
 };
 } //namespace app

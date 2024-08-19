@@ -30,13 +30,11 @@ SCENARIO("Test serialization") {
             serializer::GameSerializationProvider game_provider(game);
             serializer::PlayersManagerSerializationProvider players_manager_provider(app::PlayersManager::Instance());
 
-            serializer::SerializationProvider ser_provider(game_provider, players_manager_provider);
-
             WHEN ("Try serialize it") {
                 std::stringstream ss;
 
                 boost::archive::polymorphic_text_oarchive oa{ss};
-                oa << ser_provider;
+                oa << game_provider << players_manager_provider;
 
                 AND_THEN("Try save serialized game object") {
                     save_manager::SaveToFile(AUTOSAVE_FILE_PATH, ss.str());
@@ -54,12 +52,13 @@ SCENARIO("Test serialization") {
             boost::archive::polymorphic_text_iarchive ia(ss);
 
             AND_THEN("Parse data and insert it into object") {
-                serializer::SerializationProvider ser_provider;
+                serializer::GameSerializationProvider game_provider;
+                serializer::PlayersManagerSerializationProvider players_manager_provider;
 
-                ia >> ser_provider;
+                ia >> game_provider >> players_manager_provider;
 
-                CHECK(ser_provider.game_ser_provider.sessions_providers.size() == 1);
-                CHECK(ser_provider.players_manager_ser_provider.players_providers.size() == 1);
+                CHECK(game_provider.sessions_providers.size() == 1);
+                CHECK(players_manager_provider.players_providers.size() == 1);
             }
         }
     }

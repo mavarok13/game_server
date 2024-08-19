@@ -23,49 +23,69 @@ namespace http = beast::http;
 
 using tcp = net::ip::tcp;
 using namespace std::literals;
-// Разместите здесь реализацию http-сервера, взяв её из задания по разработке асинхронного сервера
 
 class SessionBase {
 public:
-    explicit SessionBase(tcp::socket && socket) : stream_(std::move(socket)) {}
+    SessionBase(const SessionBase &) = delete;
+    SessionBase& operator=(const SessionBase &) = delete;
 
     void Run();
 
 protected:
     using HttpRequest = http::request<http::string_body>;
-    using HttpResponse = http::response<http::string_body>;
 
-    virtual std::shared_ptr<SessionBase> GetSharedPtr() = 0;
+    explicit SessionBase(tcp::socket && socket) : stream_(std::move(socket)) {}
+    ~SessionBase() = default;
     
-    virtual void HandleRequest (HttpRequest request) = 0;
+    virtual void HandleRequest (HttpRequest && request) = 0;
 
     template <typename Body, typename Fields>
     void Write(http::response<Body, Fields> && response, std::chrono::time_point<std::chrono::system_clock> start_time_response) {
-
         auto response_ptr = std::make_shared<http::response<Body, Fields>>(std::move(response));
-        http::async_write(stream_, *response_ptr, [response_ptr, self = GetSharedPtr(), start_time_response, this] (beast::error_code ec, std::size_t bytes) {
+        auto self = GetSharedThis();
 
-            if (ec) {
-                // std::cerr << ec.what() << std::endl;
-                BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", ec.value() }, {"text", ec.message()}, {"where", "write"}}) << logging::add_value(message_, "error");
-                return;
-            }
-
-            std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
-            auto response_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time_response);
-
-            BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", response_ptr->result_int() }, {"response_time", response_time.count()}, {"content_type", (*response_ptr)[http::field::content_type]}}) << logging::add_value(message_, "response sent");
-
-            if (response_ptr->need_eof()) {
-                return Close();
-            }
-
-            Read();
+        http::async_write(stream_, *response_ptr, [response_ptr, self, start_time_response] (beast::error_code ec, std::size_t bytes) {
+            self->OnWrite(response_ptr->need_eof(), response_ptr, start_time_response, ec, bytes);
         });
     }
 
 private:
     void Read();
+
+    void OnRead(beast::error_code ec, [[maybe_unused]] std::size_t bytes_read) {
+        if (ec == http::error::end_of_stream) {
+            Close();
+        }
+
+        if (ec) {
+            BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", ec.value() }, {"text", ec.message()}, {"where", "read"}}) << logging::add_value(message_, "error");
+            return;
+        }
+
+        BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "ip", stream_.socket().remote_endpoint().address().to_string() }, {"URI", request_.target()}, {"method", request_.method_string()}}) << logging::add_value(message_, "request received");
+
+        HandleRequest(std::move(request_));
+    }
+
+    void OnWrite(bool close, auto response_ptr, std::chrono::time_point<std::chrono::system_clock> start_time_response, beast::error_code ec, [[maybe_unused]] std::size_t bytes_written) {
+        if (ec) {
+            BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", ec.value() }, {"text", ec.message()}, {"where", "write"}}) << logging::add_value(message_, "error");
+            return;
+        }
+
+        std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+        auto response_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time_response);
+
+        BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", response_ptr->result_int() }, {"response_time", response_time.count()}, {"content_type", (*response_ptr)[http::field::content_type]}}) << logging::add_value(message_, "response sent");
+
+        if (close) {
+            return Close();
+        }
+
+        Read();
+    }
+
+    virtual std::shared_ptr<SessionBase> GetSharedThis() = 0;
 
     void Close();
 
@@ -82,19 +102,16 @@ public:
     Session (tcp::socket && socket, Handler && handler) : SessionBase(std::move(socket)), handler_(std::forward<Handler>(handler)) {}
 
 protected:
-    void HandleRequest(HttpRequest request) override {
-
+    void HandleRequest(HttpRequest && request) override {
         handler_(std::move(request), [self=this->shared_from_this()] (auto && response, std::chrono::time_point<std::chrono::system_clock> start_time_response) {
-
             self->Write(std::move(response), start_time_response);
         });
     }
-
-    std::shared_ptr<SessionBase> GetSharedPtr() override {
+private:
+    std::shared_ptr<SessionBase> GetSharedThis() override {
         return this->shared_from_this();
     }
 
-private:
     RequestHandler handler_;
 
 };
@@ -102,29 +119,35 @@ private:
 template <typename RequestHandler>
 class Listener : public std::enable_shared_from_this<Listener<RequestHandler>> {
 public:
-    Listener (net::io_context & io, const tcp::endpoint & endpoint, RequestHandler && handler) : 
+    template <typename Handler>
+    Listener (net::io_context & io, const tcp::endpoint & endpoint, Handler && handler) : 
     io_(io),
     endpoint_(endpoint),
     acceptor_(net::make_strand(io)),
-    handler_(handler) {
-
+    handler_(std::forward<Handler>(handler)) {
         acceptor_.open(endpoint.protocol());
         acceptor_.set_option(tcp::acceptor::reuse_address(true));
         acceptor_.bind(endpoint);
         acceptor_.listen();
     }
 
-    void Accept() {
-        acceptor_.async_accept(net::make_strand(io_), [self = this->shared_from_this()] (beast::error_code ec, tcp::socket socket) {
-            if (ec) {
-                // std::cerr << ec.what() << std::endl;
-                BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", ec.value() }, {"text", ec.message()}, {"where", "accept"}}) << logging::add_value(message_, "error");
-                return;
-            }
+    void DoAccept() {
+        acceptor_.async_accept(net::make_strand(io_), beast::bind_front_handler(&Listener::OnAccept, this->shared_from_this()));
+    }
 
-            std::make_shared<Session<RequestHandler>>(std::move(socket), std::move(self->handler_))->Run();
-            self->shared_from_this()->Accept();
-        });
+    void OnAccept (beast::error_code ec, tcp::socket socket) {
+        if (ec) {
+            BOOST_LOG_TRIVIAL(info) << logging::add_value(data_, {{ "code", ec.value() }, {"text", ec.message()}, {"where", "accept"}}) << logging::add_value(message_, "error");
+            return;
+        }
+
+        AsyncRunSession(std::move(socket));
+
+        DoAccept();
+    }
+
+    void AsyncRunSession(tcp::socket && socket) {
+        std::make_shared<Session<RequestHandler>>(std::move(socket), std::move(handler_))->Run();
     }
 
 private:
@@ -139,7 +162,7 @@ template <typename RequestHandler>
 void ServeHttp(net::io_context & io, const tcp::endpoint & endpoint, RequestHandler && handler) {
     using ThisListener = Listener<RequestHandler>;
 
-    std::make_shared<ThisListener>(io, endpoint, std::forward<RequestHandler>(handler))->Accept();
+    std::make_shared<ThisListener>(io, endpoint, std::forward<RequestHandler>(handler))->DoAccept();
 }
 
 }  // namespace http_server

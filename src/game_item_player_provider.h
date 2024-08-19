@@ -15,7 +15,7 @@ public:
     }
 
     Item GetItem(size_t idx) const override {
-        geom::Point2D position(items_.at(idx).GetPosition().x, items_[idx].GetPosition().y);
+        geom::Point2D position(items_.at(idx).GetPosition().x, items_.at(idx).GetPosition().y);
 
         return Item{position, model::Item::WIDTH};
     }

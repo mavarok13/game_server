@@ -85,6 +85,8 @@ public:
     GameSessionSerializationProvider() {}
 
     explicit GameSessionSerializationProvider(model::GameSession & game_session) {
+        id = game_session.GetId();
+
         for (const model::Dog & dog : game_session.GetDogs()) {
             dogs_providers.emplace_back(dog);
         }
@@ -94,31 +96,27 @@ public:
         }
 
         map_id = *(game_session.GetMap()->GetId());
-
-        std::stringstream ss;
-        ss << &game_session;
-        addr = ss.str();
     }
 
+    unsigned int id;
     std::vector<DogSerializationProvider> dogs_providers;
     std::vector<ItemSerializationProvider> items_providers;
     std::string map_id;
-    std::string addr;
 private:
     friend class boost::serialization::access;
 
     void serialize(boost::archive::polymorphic_oarchive & oa, [[maybe_unused]] const unsigned int version) {
+        oa & id;
         oa & dogs_providers;
         oa & items_providers;
         oa & map_id;
-        oa & addr;
     }
 
     void serialize(boost::archive::polymorphic_iarchive & ia, [[maybe_unused]] const unsigned int version) {
+        ia & id;
         ia & dogs_providers;
         ia & items_providers;
         ia & map_id;
-        ia & addr;
     }
 };
 
@@ -153,18 +151,15 @@ public:
         token = player.GetToken();
         player_id = player.GetPlayerId();
         player_name = player.GetPlayerName();
+        session_id = player.GetSessionId();
         scores = player.GetScores();
-        
-        std::stringstream ss;
-        ss << player.GetSession();
-        session_addr = ss.str();
     }
 
     std::string token;
     int player_id;
     std::string player_name;
+    unsigned int session_id;
     unsigned int scores;
-    std::string session_addr;
 
 private:
     friend class boost::serialization::access;
@@ -173,16 +168,16 @@ private:
         oa & token;
         oa & player_id;
         oa & player_name;
+        oa & session_id;
         oa & scores;
-        oa & session_addr;
     }
 
     void serialize(boost::archive::polymorphic_iarchive & ia, [[maybe_unused]] const unsigned int version) {
         ia & token;
         ia & player_id;
         ia & player_name;
+        ia & session_id;
         ia & scores;
-        ia & session_addr;
     }
 };
 

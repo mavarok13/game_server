@@ -5,6 +5,14 @@
 namespace model {
 using namespace std::literals;
 
+bool operator==(const Vector2 & v1, const Vector2 & v2) {
+    return v1.x == v2.x && v1.y == v2.y;
+}
+
+bool operator!=(const Vector2 & v1, const Vector2 & v2) {
+    return !(v1==v2);
+}
+
 std::vector<Road> GetDogStandRoads(const Dog & dog, const Map & map) {
     std::vector<Road> picked_roads;
 
@@ -48,7 +56,6 @@ void Map::AddOffice(Office office) {
     try {
         warehouse_id_to_index_.emplace(o.GetId(), index);
     } catch (...) {
-        // Удаляем офис из вектора, если не удалось вставить в unordered_map
         offices_.pop_back();
         throw;
     }
@@ -77,8 +84,8 @@ void GameSession::Update(unsigned int delta_time) {
         std::vector <Road> picked_roads = GetDogStandRoads(dog, *map_);
 
         if (picked_roads.size() != 0) {
-            position.x += speed.x * (delta_time/1000.0);
-            position.y += speed.y * (delta_time/1000.0);
+            position.x += speed.x * (delta_time/MILLISECONDS_IN_SECOND);
+            position.y += speed.y * (delta_time/MILLISECONDS_IN_SECOND);
         }
 
         for (const Road & road : picked_roads) {

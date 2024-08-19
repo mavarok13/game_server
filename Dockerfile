@@ -9,25 +9,31 @@ RUN apt update && \
 
 COPY conanfile.txt /app/
 RUN mkdir /app/build && cd /app/build && \
-    conan install .. --build=missing -s compiler.libcxx=libstdc++11
+#    conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s build_type=Release
+    conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s build_type=Debug
 
 COPY ./src /app/src
 COPY ./tests /app/tests
 
 COPY CMakeLists.txt /app/
 RUN cd /app/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release ..
+#    cmake -DCMAKE_BUILD_TYPE=Release ..
+    cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG="-g -O0" -DCMAKE_CXX_FLAGS_DEBUG="-g -O0" ..
 
 RUN cd /app/build && cmake --build . -t game_server
 
 FROM ubuntu:22.04 as run
 
-RUN groupadd -r www && useradd -r -g www www
-USER www
+RUN mkdir /app/ && mkdir /app/game_server_saves
+RUN chmod 777 /app/game_server_saves
 
-COPY --from=build /app/build/bin/game_server /app/
+#RUN mkdir /tmp/volume && chmod 777 /tmp/volume
+
+RUN groupadd -r www && useradd -r -g www www
+USER www 
+
+COPY --from=build /app/build/game_server /app/
 COPY ./data /app/data
 COPY ./static /app/static
 
-ENTRYPOINT ["/app/game_server", "-c", "/app/data/config.json", "-w", "/app/static", "-t", "50"]
-#ENTRYPOINT ["/app/game_server", "-c", "/app/data/config.json", "-w", "/app/static"]
+ENTRYPOINT ["/app/game_server", "-c", "/app/data/config.json", "-w", "/app/static"]
