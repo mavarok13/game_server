@@ -9,16 +9,14 @@ RUN apt update && \
 
 COPY conanfile.txt /app/
 RUN mkdir /app/build && cd /app/build && \
-#    conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s build_type=Release
-    conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s build_type=Debug
+    conan install .. --build=missing -s compiler.libcxx=libstdc++11 -s build_type=Release
 
 COPY ./src /app/src
 COPY ./tests /app/tests
 
 COPY CMakeLists.txt /app/
 RUN cd /app/build && \
-#    cmake -DCMAKE_BUILD_TYPE=Release ..
-    cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG="-g -O0" -DCMAKE_CXX_FLAGS_DEBUG="-g -O0" ..
+    cmake -DCMAKE_BUILD_TYPE=Release ..
 
 RUN cd /app/build && cmake --build . -t game_server
 
@@ -36,4 +34,4 @@ COPY --from=build /app/build/game_server /app/
 COPY ./data /app/data
 COPY ./static /app/static
 
-ENTRYPOINT ["/app/game_server", "-c", "/app/data/config.json", "-w", "/app/static"]
+ENTRYPOINT ["/app/game_server", "-c", "/app/data/config.json", "-w", "/app/static", "-t", "50", "--randomize-spawn-points", "--state-file", "/app/game_server_saves", "--save-state-period", 5000]
